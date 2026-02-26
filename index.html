@@ -93,7 +93,8 @@
 
       </a-entity>
 
-      <a-camera gps-camera="minDistance: 0" rotation-reader></a-camera>
+      <!-- minDistance: 2 = Objekte werden erst neu positioniert wenn man 2m bewegt hat -->
+      <a-camera gps-camera="minDistance: 2" rotation-reader></a-camera>
 
     </a-scene>
 
@@ -114,7 +115,11 @@
             document.getElementById('status').textContent =
               '⚠️ GPS Fehler: ' + err.message;
           },
-          { enableHighAccuracy: true }
+          {
+            enableHighAccuracy: true,
+            maximumAge: 5000,        // GPS-Position max. 5 Sekunden cachen
+            timeout: 10000           // nach 10s Fehler wenn kein Signal
+          }
         );
       });
     </script>
