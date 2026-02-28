@@ -45,30 +45,49 @@
       loading-screen="enabled: false"
     >
       <a-assets>
-        <a-asset-item id="model" src="Test.glb"></a-asset-item>
+        <a-asset-item id="model" src="./Test.glb"></a-asset-item>
+        <audio id="musik" src="https://raw.githubusercontent.com/DigitalBohemians/AR-Hydra/main/paralia-hara.mp3" preload="auto"></audio>
       </a-assets>
 
       <a-entity
         gps-entity-place="latitude: 37.350000; longitude: 23.466767"
         look-at="[gps-camera]"
       >
+        <!-- GLB Modell – falls es lädt -->
         <a-entity
           gltf-model="#model"
           animation-mixer="loop: repeat"
-          position="0 0 0"
-          scale="2 2 2"
+          position="0 1 0"
+          scale="5 5 5"
         ></a-entity>
+
+        <!-- Fallback: sichtbare Formen falls GLB nicht lädt -->
+        <a-sphere
+          position="0 2 0"
+          radius="0.8"
+          color="#ff6600"
+          opacity="0.9"
+          animation="property: rotation; to: 0 360 0; loop: true; dur: 4000; easing: linear"
+        ></a-sphere>
+
+        <a-torus
+          position="0 2 0"
+          radius="1.2"
+          radius-tubular="0.05"
+          color="#00ffcc"
+          animation="property: rotation; to: 360 0 360; loop: true; dur: 6000; easing: linear"
+        ></a-torus>
 
         <a-text
           value="🏛 ARExhibition\nWillkommen auf Hydra!"
           color="white"
           align="center"
           width="6"
-          position="0 3.5 0"
+          position="0 4 0"
         ></a-text>
 
         <a-box
-          position="0 3.5 -0.1"
+          position="0 4 -0.1"
           width="3.5"
           height="1.2"
           depth="0.05"
@@ -76,13 +95,26 @@
           opacity="0.8"
         ></a-box>
 
+        <!-- Zylinder Boden -->
         <a-cylinder
           position="0 0.05 0"
-          radius="0.5"
-          height="0.1"
+          radius="1"
+          height="0.15"
           color="#00ffcc"
           opacity="0.7"
+          animation="property: material.opacity; from: 0.3; to: 0.9; loop: true; dur: 2000; direction: alternate"
         ></a-cylinder>
+
+        <!-- Pulsierender Ring am Boden -->
+        <a-torus
+          position="0 0.1 0"
+          radius="1.5"
+          radius-tubular="0.03"
+          color="#ffffff"
+          opacity="0.4"
+          rotation="90 0 0"
+          animation="property: scale; from: 1 1 1; to: 1.3 1.3 1.3; loop: true; dur: 1500; direction: alternate; easing: easeInOutSine"
+        ></a-torus>
       </a-entity>
 
       <a-camera gps-camera="minDistance: 1; gpsTimeInterval: 2000;" rotation-reader></a-camera>
@@ -96,6 +128,32 @@
       startBtn.addEventListener('click', () => {
         overlay.style.display = 'none';
         status.style.display  = 'block';
+
+        // Musik starten
+        const musik = document.getElementById('musik');
+        musik.loop   = true;
+        musik.volume = 0.6;
+        musik.play().catch(err => {
+          console.warn('Musik konnte nicht gestartet werden:', err);
+        });
+
+        // iOS Kompass-Erlaubnis
+        if (typeof DeviceOrientationEvent !== 'undefined' &&
+            typeof DeviceOrientationEvent.requestPermission === 'function') {
+          DeviceOrientationEvent.requestPermission()
+            .then(response => {
+              if (response === 'granted') {
+                status.textContent = '✅ Kompass aktiv – GPS wird ermittelt…';
+              } else {
+                status.textContent = '⚠️ Kompass verweigert! Bitte in Einstellungen erlauben.';
+              }
+            })
+            .catch(err => {
+              status.textContent = '⚠️ Kompass Fehler: ' + err.message;
+            });
+        }
+
+        // GPS Tracking
         if (navigator.geolocation) {
           navigator.geolocation.watchPosition(
             (pos) => {
@@ -107,6 +165,8 @@
             (err) => { status.textContent = '⚠️ GPS Fehler: ' + err.message; },
             { enableHighAccuracy: true, maximumAge: 0, timeout: 15000 }
           );
+        } else {
+          status.textContent = '⚠️ GPS nicht verfügbar auf diesem Gerät.';
         }
       });
     </script>
